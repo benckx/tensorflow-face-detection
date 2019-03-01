@@ -1,7 +1,7 @@
 import glob
 import io
 import sys
-import time
+from random import randint
 
 import numpy as np
 import tensorflow as tf
@@ -47,7 +47,6 @@ with detection_graph.as_default():
   config.gpu_options.allow_growth = True
   with tf.Session(graph=detection_graph, config=config) as sess:
     for image_path in images:
-      print(image_path)
       image_data = open(image_path, "rb").read()
       image = Image.open(io.BytesIO(image_data))
       rgb_im = image.convert('RGB')
@@ -61,35 +60,37 @@ with detection_graph.as_default():
       classes = detection_graph.get_tensor_by_name('detection_classes:0')
       num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-      # Actual detection.
-      start_time = time.time()
-      (boxes, scores, classes, num_detections) = sess.run(
-        [boxes, scores, classes, num_detections],
-        feed_dict={image_tensor: image_np_expanded})
-      elapsed_time = time.time() - start_time
-      print('inference time cost: {}'.format(elapsed_time))
+      try:
+        # Actual detection.
+        (boxes, scores, classes, num_detections) = sess.run(
+          [boxes, scores, classes, num_detections],
+          feed_dict={image_tensor: image_np_expanded})
 
-      boxes_coordinate = vis_util.get_boxes(
-        np.squeeze(boxes),
-        np.squeeze(classes).astype(np.int32),
-        np.squeeze(scores),
-        category_index)
+        boxes_coordinate = vis_util.get_boxes(
+          np.squeeze(boxes),
+          np.squeeze(classes).astype(np.int32),
+          np.squeeze(scores),
+          category_index)
 
-      readable_score = vis_util.get_scores(
-        np.squeeze(boxes),
-        np.squeeze(classes).astype(np.int32),
-        np.squeeze(scores),
-        category_index)
+        readable_score = vis_util.get_scores(
+          np.squeeze(boxes),
+          np.squeeze(classes).astype(np.int32),
+          np.squeeze(scores),
+          category_index)
 
-      print("score: " + str(readable_score))
+        i = 0
+        for box, color in boxes_coordinate:
+          y_min, x_min, y_max, x_max = box
+          x1 = int(x_min * width)
+          y1 = int(y_min * height)
+          x2 = int(x_max * width)
+          y2 = int(y_max * height)
+          row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y1, x2, y2)
+          output.write(row + "\n")
+          if randint(0, 100) == 50:
+            output.flush()
+          i += 1
+      except ValueError as exception:
+        print('error during detection: ' + str(exception))
 
-      i = 0
-      for box, color in boxes_coordinate:
-        y_min, x_min, y_max, x_max = box
-        x1 = int(x_min * width)
-        y1 = int(y_min * height)
-        x2 = int(x_max * width)
-        y2 = int(y_max * height)
-        row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y1, x2, y2)
-        output.write(row + "\n")
-        i += 1
+output.close()
