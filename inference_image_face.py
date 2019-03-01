@@ -1,8 +1,7 @@
+import glob
 import io
 import sys
 import time
-from os import listdir
-from os.path import isfile, join
 
 import numpy as np
 import tensorflow as tf
@@ -19,11 +18,8 @@ PATH_TO_CKPT = './model/frozen_inference_graph_face.pb'
 # List of the strings that is used to add correct label for each box.
 PATH_TO_LABELS = './protos/face_label_map.pbtxt'
 
-NUM_CLASSES = 2
-
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES,
-                                                            use_display_name=True)
+categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=2, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
 detection_graph = tf.Graph()
@@ -34,8 +30,10 @@ with detection_graph.as_default():
     od_graph_def.ParseFromString(serialized_graph)
     tf.import_graph_def(od_graph_def, name='')
 
-image_folder = 'test_images'
-image_names = [f for f in listdir(image_folder) if (isfile(join(image_folder, f)) and (f.endswith(".jpg") or f.endswith(".jpeg")))]
+if len(sys.argv) == 2:
+  image_folder = sys.argv[1]
+else:
+  image_folder = 'test_images'
 
 output = open("result.csv", "w+")
 
@@ -43,8 +41,7 @@ with detection_graph.as_default():
   config = tf.ConfigProto()
   config.gpu_options.allow_growth = True
   with tf.Session(graph=detection_graph, config=config) as sess:
-    for image_name in image_names:
-      image_path = image_folder + '/' + image_name
+    for image_path in glob.iglob(image_folder + '/**/*.jpg', recursive=True):
       print(image_path)
       image_data = open(image_path, "rb").read()
       image = Image.open(io.BytesIO(image_data))
