@@ -30,18 +30,23 @@ with detection_graph.as_default():
     od_graph_def.ParseFromString(serialized_graph)
     tf.import_graph_def(od_graph_def, name='')
 
-if len(sys.argv) == 2:
-  image_folder = sys.argv[1]
+if len(sys.argv) >= 2:
+  image_folders = sys.argv[0:]
 else:
-  image_folder = 'test_images'
+  image_folders = ['test_images']
 
 output = open("result.csv", "w+")
+
+images = []
+for folder in image_folders:
+  images.extend(glob.iglob(folder + '/**/*.jpg', recursive=True))
+  images.extend(glob.iglob(folder + '/**/*.jpeg', recursive=True))
 
 with detection_graph.as_default():
   config = tf.ConfigProto()
   config.gpu_options.allow_growth = True
   with tf.Session(graph=detection_graph, config=config) as sess:
-    for image_path in glob.iglob(image_folder + '/**/*.jpg', recursive=True):
+    for image_path in images:
       print(image_path)
       image_data = open(image_path, "rb").read()
       image = Image.open(io.BytesIO(image_data))
@@ -64,28 +69,27 @@ with detection_graph.as_default():
       elapsed_time = time.time() - start_time
       print('inference time cost: {}'.format(elapsed_time))
 
-      boxes_to_draw = vis_util.get_boxes(
+      boxes_coordinate = vis_util.get_boxes(
         np.squeeze(boxes),
         np.squeeze(classes).astype(np.int32),
         np.squeeze(scores),
         category_index)
 
-      scores_readables = vis_util.get_scores(
+      readable_score = vis_util.get_scores(
         np.squeeze(boxes),
         np.squeeze(classes).astype(np.int32),
         np.squeeze(scores),
         category_index)
 
-      print("score: " + str(scores_readables))
+      print("score: " + str(readable_score))
 
       i = 0
-      for box, color in boxes_to_draw:
-        print()
-        ymin, xmin, ymax, xmax = box
-        x1 = int(xmin * width)
-        y1 = int(ymin * height)
-        x2 = int(xmax * width)
-        y2 = int(ymax * height)
-        row = '{},{},{},{},{},{}'.format(image_path, scores_readables[i], x1, y2, x2, y2)
+      for box, color in boxes_coordinate:
+        y_min, x_min, y_max, x_max = box
+        x1 = int(x_min * width)
+        y1 = int(y_min * height)
+        x2 = int(x_max * width)
+        y2 = int(y_max * height)
+        row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y2, x2, y2)
         output.write(row + "\n")
         i += 1
