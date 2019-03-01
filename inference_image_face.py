@@ -47,20 +47,20 @@ with detection_graph.as_default():
   config.gpu_options.allow_growth = True
   with tf.Session(graph=detection_graph, config=config) as sess:
     for image_path in images:
-      image_data = open(image_path, "rb").read()
-      image = Image.open(io.BytesIO(image_data))
-      rgb_im = image.convert('RGB')
-      width = rgb_im.size[0]
-      height = rgb_im.size[1]
-
-      image_np_expanded = np.expand_dims(image, axis=0)
-      image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-      boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
-      scores = detection_graph.get_tensor_by_name('detection_scores:0')
-      classes = detection_graph.get_tensor_by_name('detection_classes:0')
-      num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-
       try:
+        image_data = open(image_path, "rb").read()
+        image = Image.open(io.BytesIO(image_data))
+        rgb_im = image.convert('RGB')
+        width = rgb_im.size[0]
+        height = rgb_im.size[1]
+
+        image_np_expanded = np.expand_dims(image, axis=0)
+        image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+        boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+        scores = detection_graph.get_tensor_by_name('detection_scores:0')
+        classes = detection_graph.get_tensor_by_name('detection_classes:0')
+        num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+
         # Actual detection.
         (boxes, scores, classes, num_detections) = sess.run(
           [boxes, scores, classes, num_detections],
@@ -87,10 +87,10 @@ with detection_graph.as_default():
           y2 = int(y_max * height)
           row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y1, x2, y2)
           output.write(row + "\n")
-          if randint(0, 100) == 50:
+          if randint(0, 30) == 15:
             output.flush()
           i += 1
-      except ValueError as exception:
-        print('error during detection: ' + str(exception))
+      except:
+        print('error during detection')
 
 output.close()
