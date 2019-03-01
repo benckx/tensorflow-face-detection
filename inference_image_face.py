@@ -90,6 +90,6 @@ with detection_graph.as_default():
         y1 = int(y_min * height)
         x2 = int(x_max * width)
         y2 = int(y_max * height)
-        row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y2, x2, y2)
+        row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y1, x2, y2)
         output.write(row + "\n")
         i += 1
