@@ -47,6 +47,7 @@ with detection_graph.as_default():
   config.gpu_options.allow_growth = True
   with tf.Session(graph=detection_graph, config=config) as sess:
     for image_path in images:
+      print(image_path)
       try:
         image_data = open(image_path, "rb").read()
         image = Image.open(io.BytesIO(image_data))
@@ -72,24 +73,25 @@ with detection_graph.as_default():
           np.squeeze(scores),
           category_index)
 
-        readable_score = vis_util.get_scores(
-          np.squeeze(boxes),
-          np.squeeze(classes).astype(np.int32),
-          np.squeeze(scores),
-          category_index)
+        if len(boxes_coordinate) > 0:
+          readable_score = vis_util.get_scores(
+            np.squeeze(boxes),
+            np.squeeze(classes).astype(np.int32),
+            np.squeeze(scores),
+            category_index)
 
-        i = 0
-        for box, color in boxes_coordinate:
-          y_min, x_min, y_max, x_max = box
-          x1 = int(x_min * width)
-          y1 = int(y_min * height)
-          x2 = int(x_max * width)
-          y2 = int(y_max * height)
-          row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y1, x2, y2)
-          output.write(row + "\n")
-          if randint(0, 30) == 15:
-            output.flush()
-          i += 1
+          i = 0
+          for box, color in boxes_coordinate:
+            y_min, x_min, y_max, x_max = box
+            x1 = int(x_min * width)
+            y1 = int(y_min * height)
+            x2 = int(x_max * width)
+            y2 = int(y_max * height)
+            row = '{},{},{},{},{},{}'.format(image_path, readable_score[i], x1, y1, x2, y2)
+            output.write(row + "\n")
+            if randint(0, 30) == 15:
+              output.flush()
+            i += 1
       except:
         print('error during detection')
 
