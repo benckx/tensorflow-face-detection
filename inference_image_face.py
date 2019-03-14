@@ -37,6 +37,8 @@ else:
 
 output = open("result.csv", "w+")
 
+print("folders: {}".format(image_folders))
+
 images = []
 for folder in image_folders:
   images.extend(glob.iglob(folder + '/**/*.jpg', recursive=True))
@@ -67,13 +69,15 @@ with detection_graph.as_default():
           [boxes, scores, classes, num_detections],
           feed_dict={image_tensor: image_np_expanded})
 
-        boxes_coordinate = vis_util.get_boxes(
+        boxes_coordinates = vis_util.get_boxes(
           np.squeeze(boxes),
           np.squeeze(classes).astype(np.int32),
           np.squeeze(scores),
           category_index)
 
-        if len(boxes_coordinate) > 0:
+        print(boxes_coordinates)
+
+        if len(boxes_coordinates) > 0:
           readable_score = vis_util.get_scores(
             np.squeeze(boxes),
             np.squeeze(classes).astype(np.int32),
@@ -81,7 +85,7 @@ with detection_graph.as_default():
             category_index)
 
           i = 0
-          for box, color in boxes_coordinate:
+          for box, _ in boxes_coordinates:
             y_min, x_min, y_max, x_max = box
             x1 = int(x_min * width)
             y1 = int(y_min * height)
@@ -92,7 +96,7 @@ with detection_graph.as_default():
             if randint(0, 30) == 15:
               output.flush()
             i += 1
-      except:
-        print('error during detection')
+      except Exception as e:
+        print('error during detection: {}'.format(e))
 
 output.close()
